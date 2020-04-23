@@ -250,10 +250,13 @@ namespace SaveManager
         {
             ContainerFile meta = (ContainerFile)listViewItem.Tag;
             string result = Microsoft.VisualBasic.Interaction.InputBox("Question?", "Title", meta.Summary);
-            meta.Summary = result;
-            backup.Save(meta);
-            listView1.SelectedItems.Clear();
-            RefreshZipList();
+            if (result.Length > 0)
+            {
+                meta.Summary = result;
+                backup.Save(meta);
+                listView1.SelectedItems.Clear();
+                RefreshZipList();
+            }
         }
 
         private void Delete(ListViewItem listViewItem)
