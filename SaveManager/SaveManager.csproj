@@ -91,6 +91,7 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Backup.cs" />
     <Compile Include="TraceWriter.cs" />
     <Compile Include="ContainerFile.cs" />
     <Compile Include="AssemblyAttributes.cs" />

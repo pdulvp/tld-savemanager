@@ -1,4 +1,7 @@
-﻿using System;
+﻿using Microsoft.VisualBasic;
+using System;
+using System.Collections.Generic;
+using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Data;
 using System.Diagnostics;
@@ -7,6 +10,7 @@ using System.IO;
 using System.IO.Compression;
 using System.Linq;
 using System.Reflection;
+using System.Security.Cryptography;
 using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
@@ -17,15 +21,18 @@ namespace SaveManager
 
     public partial class Form1 : Form
     {
-        FileSystemWatcher watcherSave = new FileSystemWatcher();
-
-        FileSystemWatcher watcherZip = new FileSystemWatcher();
+        Backup backup = new Backup();
 
         public Form1()
         {
             InitializeComponent();
 
+            backup.AddedBackup += Backup_AddedBackup;
             Trace.Listeners.Add(new TraceWriterWrapper(consoleView));
+
+            imageList1.Images.Add("lock", global::SaveManager.Properties.Resources._lock);
+            imageList1.Images.Add("delete", global::SaveManager.Properties.Resources.delete);
+            imageList1.Images.Add("console", global::SaveManager.Properties.Resources.Console_16x);
 
             githubToolStripMenuItem.Visible = Assembly.GetEntryAssembly()
             .GetCustomAttributes(typeof(GitRepositoryAttribute), false)
@@ -35,6 +42,7 @@ namespace SaveManager
             toolStripStatusLabel2.Alignment = ToolStripItemAlignment.Right;
             toolStripStatusLabel5.Alignment = ToolStripItemAlignment.Right;
             toolStripStatusLabel4.Alignment = ToolStripItemAlignment.Right;
+
 
             listView1.View = View.Details;
             listView1.GridLines = true;
@@ -48,6 +56,7 @@ namespace SaveManager
             consoleView.GridLines = true;
             consoleView.FullRowSelect = true;
             consoleView.Columns.Add("Message", "Message");
+            consoleView.Columns[0].ImageKey = "console";
             consoleView.Columns.Add("Date", "Date");
             consoleView_Resize(consoleView, null);
 
@@ -57,60 +66,40 @@ namespace SaveManager
             quitTLDOnChangeToolStripMenuItem.Checked = true;
             quitTLDOnChangeToolStripMenuItem.CheckOnClick = true;
 
-            hideDeletedElementsToolStripMenuItem.Checked = false;
+            hideDeletedElementsToolStripMenuItem.Checked = true;
             hideDeletedElementsToolStripMenuItem.CheckOnClick = true;
 
             consoleToolStripMenuItem.Checked = false;
             consoleToolStripMenuItem.CheckOnClick = true;
 
-            watcherSave.Path = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), $@"..\Local\Packages\27620HinterlandStudio.30233944AADE4_y1bt56c4151zw\SystemAppData\wgs\000900000B79F9B4_B23B0100842A4BE28C91CA122924EC89\F8348F5BB7A4498080B3F0194C38FFC9\");
-            watcherSave.NotifyFilter = NotifyFilters.LastAccess | NotifyFilters.LastWrite | NotifyFilters.FileName | NotifyFilters.DirectoryName;
-            watcherSave.Filter = "container.*";
-            watcherSave.Created += OnSaveChanged;
-            watcherSave.Renamed += OnRenamed;
-            EnableAutomaticBackup(automaticBackupToolStripMenuItem.Checked);
+            backup.EnableAutomaticBackup(automaticBackupToolStripMenuItem.Checked);
 
-            watcherZip.Path = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), $@"..\Local\Packages\27620HinterlandStudio.30233944AADE4_y1bt56c4151zw\SystemAppData\");
-            watcherZip.NotifyFilter = NotifyFilters.LastAccess | NotifyFilters.LastWrite | NotifyFilters.FileName | NotifyFilters.DirectoryName;
-            watcherZip.Filter = "*.zip";
-            watcherZip.Created += OnZipChanged;
-            watcherZip.EnableRaisingEvents = true;
-
-            imageList1.Images.Add("lock", global::SaveManager.Properties.Resources._lock);
-            imageList1.Images.Add("delete", global::SaveManager.Properties.Resources.delete);
+            splitContainer1.Panel2Collapsed = true;
             RefreshZipList();
+        }
+
+        private void Backup_AddedBackup(object sender, EventArgs e)
+        {
+            listView1.Invoke(new MethodInvoker(delegate
+            {
+                RefreshZipList();
+            }));
         }
 
         private void RefreshZipList()
         {
             listView1.Items.Clear();
-            DirectoryInfo d = new DirectoryInfo(watcherZip.Path);
-            FileInfo[] Files = d.GetFiles(watcherZip.Filter);
-            foreach (FileInfo file in Files)
+
+            foreach (ContainerFile meta in backup.Backups)
             {
-                DateTime creation = File.GetCreationTime(file.FullName);
                 ListViewItem item = new ListViewItem(new string[listView1.Columns.Count]);
+                item.Tag = meta;
+                item.ForeColor = meta.Deleted ? Color.LightGray : Color.Black;
+                item.SubItems[listView1.Columns.IndexOfKey("Filename")].Text = meta.Filename;
+                item.SubItems[listView1.Columns.IndexOfKey("Summary")].Text = meta.Summary;
+                item.SubItems[listView1.Columns.IndexOfKey("Date")].Text = meta.Date;
 
-                FileInfo info = new FileInfo(file.FullName.Replace(".zip", ".json"));
-                if (!info.Exists)
-                {
-                    ContainerFile meta = new ContainerFile();
-                    meta.Filename = file.Name;
-                    meta.Summary = "";
-                    meta.Timestamp = creation;
-                    meta.Locked = false;
-                    meta.Deleted = false;
-                    File.WriteAllText(info.FullName, JsonSerializer.Serialize(meta));
-                }
-
-                ContainerFile meta2 = JsonSerializer.Deserialize<ContainerFile>(File.ReadAllText(info.FullName));
-                item.Tag = meta2;
-                item.ForeColor = meta2.Deleted ? Color.LightGray : Color.Black;
-                item.SubItems[listView1.Columns.IndexOfKey("Filename")].Text = meta2.Filename;
-                item.SubItems[listView1.Columns.IndexOfKey("Summary")].Text = meta2.Summary;
-                item.SubItems[listView1.Columns.IndexOfKey("Date")].Text = meta2.Date;
-
-                if (!(hideDeletedElementsToolStripMenuItem.Checked && meta2.Deleted))
+                if (!(hideDeletedElementsToolStripMenuItem.Checked && meta.Deleted))
                 {
                     listView1.Items.Add(item);
                     UpdateIcon(listView1.Items[listView1.Items.Count - 1]);
@@ -140,87 +129,9 @@ namespace SaveManager
             RefreshZipList();
         }
 
-        // Define the event handlers.
-        private void OnZipChanged(object source, FileSystemEventArgs e)
-        {
-            listView1.Invoke(new MethodInvoker(delegate
-            {
-                RefreshZipList();
-                //listView1.Items.Add($"{e.Name}");
-            }));
-        }
-
-
-        // Define the event handlers.
-        private void OnSaveChanged(object source, FileSystemEventArgs e)
-        {
-            Thread.Sleep(1000);
-            Trace.WriteLine("File created" + e.Name);
-            if (new FileInfo(e.FullPath).Exists)
-            {
-                DateTime creation = File.GetCreationTime(e.FullPath);
-                String folder = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), $@"..\Local\Packages\27620HinterlandStudio.30233944AADE4_y1bt56c4151zw\SystemAppData\");
-                String zipFile = creation.ToString("yyyyMMdd-HHmmss") + "-" + e.Name + ".zip";
-
-                FileInfo zip = new FileInfo(folder + zipFile);
-                ZipFile.CreateFromDirectory(folder + "wgs", folder + zipFile);
-
-            }
-            else
-            {
-                Trace.WriteLine("File not exist" + e.Name);
-            }
-        }
-
-        private void OnRenamed(object source, RenamedEventArgs e)
-        {
-            Thread.Sleep(1000);
-            Trace.WriteLine("File renamed" + e.Name);
-            FileInfo info = new FileInfo(e.FullPath);
-            String zipFolder = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), $@"..\Local\Packages\27620HinterlandStudio.30233944AADE4_y1bt56c4151zw\SystemAppData\");
-            if (info.Exists)
-            {
-                DateTime creation = File.GetCreationTime(e.FullPath);
-                ZipFile.CreateFromDirectory(zipFolder + "wgs", zipFolder + $@"\" + creation.ToString("yyyyMMdd-HHmmss") + "-" + e.Name + ".zip");
-            }
-        }
-
         private void backupCurrentSaveToolStripMenuItem_Click(object sender, EventArgs e)
         {
-            String folder = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), $@"..\Local\Packages\27620HinterlandStudio.30233944AADE4_y1bt56c4151zw\SystemAppData\wgs\000900000B79F9B4_B23B0100842A4BE28C91CA122924EC89\F8348F5BB7A4498080B3F0194C38FFC9\");
-            String wgsFolder = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), $@"..\Local\Packages\27620HinterlandStudio.30233944AADE4_y1bt56c4151zw\SystemAppData\wgs\");
-            String zipFolder = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), $@"..\Local\Packages\27620HinterlandStudio.30233944AADE4_y1bt56c4151zw\SystemAppData\");
-            
-            string[] files = Directory.GetFiles(folder, "container.*");
-            if (files.Length == 1)
-            {
-                FileInfo info = new FileInfo(files[0]);
-                if (info.Exists)
-                {
-                    DateTime creation = DateTime.Now;
-                    ZipFile.CreateFromDirectory(wgsFolder, zipFolder + $@"\" + creation.ToString("yyyyMMdd-HHmmss") + "-" + info.Name + ".zip");
-                }
-            }
-        }
-
-        public static void DeleteDirectory(string target_dir)
-        {
-            string[] files = Directory.GetFiles(target_dir);
-            string[] dirs = Directory.GetDirectories(target_dir);
-
-            foreach (string file in files)
-            {
-                File.SetAttributes(file, FileAttributes.Normal);
-                File.Delete(file);
-            }
-
-            foreach (string dir in dirs)
-            {
-                DeleteDirectory(dir);
-            }
-            Thread.Sleep(100);
-
-            Directory.Delete(target_dir, false);
+            backup.BackupCurrent();
         }
 
         private void listView1_MouseDoubleClick(object sender, MouseEventArgs e)
@@ -229,10 +140,6 @@ namespace SaveManager
             {
                 OnListLeftClick(e);
             }
-
-        }
-        private void listView1_MouseClick(object sender, MouseEventArgs e)
-        {
 
         }
 
@@ -245,14 +152,6 @@ namespace SaveManager
                 {
                     Upload(listView1.SelectedItems[0]);
                 }
-            }
-        }
-
-        private void OnListMiddleClick(MouseEventArgs e)
-        {
-            if (listView1.SelectedItems.Count != 0)
-            {
-                Lock(listView1.SelectedItems[0]);
             }
         }
 
@@ -284,13 +183,8 @@ namespace SaveManager
             }
 
             Trace.WriteLine($"Replace: {listViewItem}");
-            ContainerFile meta = (ContainerFile)listView1.SelectedItems[0].Tag;
-
-            String wgsFolder = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), $@"..\Local\Packages\27620HinterlandStudio.30233944AADE4_y1bt56c4151zw\SystemAppData\wgs\");
-            String zipFolder = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), $@"..\Local\Packages\27620HinterlandStudio.30233944AADE4_y1bt56c4151zw\SystemAppData\");
-            DeleteDirectory(wgsFolder);
-            System.IO.Directory.CreateDirectory(wgsFolder);
-            ZipFile.ExtractToDirectory(zipFolder + meta.Filename, wgsFolder);
+            ContainerFile meta = (ContainerFile) listView1.SelectedItems[0].Tag;
+            backup.Replace(meta);
 
             if (quitTLDOnChangeToolStripMenuItem.Checked)
             {
@@ -352,37 +246,6 @@ namespace SaveManager
             Save(meta);
         }
 
-        private void listView1_SelectedIndexChanged(object sender, EventArgs e)
-        {
-
-        }
-
-        private void Form1_Load(object sender, EventArgs e)
-        {
-
-        }
-
-        private void listView1_KeyPress(object sender, KeyPressEventArgs e)
-        {
-
-        }
-
-        private void listView1_KeyUp(object sender, KeyEventArgs e)
-        {
-            if (listView1.SelectedItems.Count != 0)
-            {
-                if (e.KeyCode == Keys.F2)
-                {
-                    Edit(listView1.SelectedItems[0]);
-
-                }
-                else if (e.KeyCode == Keys.Delete)
-                {
-                    Delete(listView1.SelectedItems[0]);
-                }
-            }
-        }
-
         private void Edit(ListViewItem listViewItem)
         {
             ContainerFile meta = (ContainerFile)listViewItem.Tag;
@@ -442,22 +305,13 @@ namespace SaveManager
             });
         }
 
-        private void menuStrip1_ItemClicked(object sender, ToolStripItemClickedEventArgs e)
-        {
-
-        }
-
         private void purgeDeletedListToolStripMenuItem_Click(object sender, EventArgs e)
         {
-            if (Microsoft.VisualBasic.Interaction.MsgBox("Sure?", Microsoft.VisualBasic.MsgBoxStyle.YesNo, "Deletion") == Microsoft.VisualBasic.MsgBoxResult.Yes)
+            if (Microsoft.VisualBasic.Interaction.MsgBox("Are you sure ?", Microsoft.VisualBasic.MsgBoxStyle.YesNo, "Deletion") == Microsoft.VisualBasic.MsgBoxResult.Yes)
             {
+                backup.Purge();
                 RefreshZipList();
             }
-        }
-
-        private void toolStripStatusLabel2_Click(object sender, EventArgs e)
-        {
-
         }
 
         private void contextMenuStrip1_Opening(object sender, CancelEventArgs e)
@@ -484,11 +338,6 @@ namespace SaveManager
             RefreshZipList();
         }
 
-        private void toolStripDropDownButton1_Click(object sender, EventArgs e)
-        {
-
-        }
-
         private void consoleToolStripMenuItem_CheckedChanged(object sender, EventArgs e)
         {
             splitContainer1.Panel2Collapsed = !consoleToolStripMenuItem.Checked;
@@ -496,29 +345,20 @@ namespace SaveManager
 
         private void automaticBackupToolStripMenuItem_CheckedChanged(object sender, EventArgs e)
         {
-            EnableAutomaticBackup(automaticBackupToolStripMenuItem.Checked);
-        }
-
-        private void EnableAutomaticBackup(bool value)
-        {
-            if (watcherSave.Path.Length > 0)
-            {
-                watcherSave.EnableRaisingEvents = value;
-                Trace.WriteLine("Automatic backup: " + watcherSave.EnableRaisingEvents);
-            }
+            backup.EnableAutomaticBackup(automaticBackupToolStripMenuItem.Checked);
         }
 
         private void listView1_Resize(object sender, EventArgs e)
         {
-            listView1.Columns[0].Width = listView1.Width - 130 - 130 - 20;
-            listView1.Columns[1].Width = 130;
+            listView1.Columns[0].Width = 2 * (listView1.Width - 130 - 20) / 3 ;
+            listView1.Columns[1].Width = 1 * (listView1.Width - 130 - 20) / 3;
             listView1.Columns[2].Width = 130;
         }
 
         private void consoleView_Resize(object sender, EventArgs e)
         {
-            consoleView.Columns[0].Width = consoleView.Width - 120 - 20;
-            consoleView.Columns[1].Width = 120;
+            consoleView.Columns[0].Width = consoleView.Width - 130 - 20;
+            consoleView.Columns[1].Width = 130;
         }
 
         private void githubToolStripMenuItem_Click(object sender, EventArgs e)
@@ -529,9 +369,5 @@ namespace SaveManager
             System.Diagnostics.Process.Start(attribute.Repository);
         }
 
-        private void listView1_SelectedIndexChanged_1(object sender, EventArgs e)
-        {
-
-        }
     }
 }
