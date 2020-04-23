@@ -16,6 +16,12 @@ namespace SaveManager
         }
 
         public string Filename { get; set; }
+
+        public string MetadataFilename
+        {
+            get { return Filename.Replace(".zip", ".json"); }
+        }
+
         public string Summary { get; set; }
         public bool Locked { get; set; }
         public bool Deleted { get; set; }

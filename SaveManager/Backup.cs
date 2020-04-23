@@ -145,6 +145,12 @@ namespace SaveManager
             ZipFile.ExtractToDirectory(zipFolder + meta.Filename, wgsFolder);
         }
 
+        internal void Save(ContainerFile meta)
+        {
+            FileInfo info = new FileInfo(zipFolder + meta.MetadataFilename);
+            File.WriteAllText(info.FullName, JsonSerializer.Serialize(meta));
+        }
+
         private void DeleteDirectory(string target_dir)
         {
             string[] files = Directory.GetFiles(target_dir);
@@ -222,14 +228,19 @@ namespace SaveManager
         internal void Purge()
         {
             foreach (ContainerFile file in Backups) {
-                if (file.Deleted)
+
+                FileInfo info = new FileInfo(zipFolder + file.Filename);
+                if (file.Deleted && info.Exists)
                 {
-                    FileInfo info = new FileInfo(zipFolder + file.Filename);
-                    if (info.Exists)
-                    {
-                        Microsoft.VisualBasic.FileIO.FileSystem.DeleteFile(info.FullName, Microsoft.VisualBasic.FileIO.UIOption.OnlyErrorDialogs, Microsoft.VisualBasic.FileIO.RecycleOption.SendToRecycleBin);
-                    }
+                    Microsoft.VisualBasic.FileIO.FileSystem.DeleteFile(info.FullName, Microsoft.VisualBasic.FileIO.UIOption.OnlyErrorDialogs, Microsoft.VisualBasic.FileIO.RecycleOption.SendToRecycleBin);
                 }
+
+                FileInfo metaInfo = new FileInfo(zipFolder + file.MetadataFilename);
+                if (file.Deleted || !info.Exists)
+                {
+                    Microsoft.VisualBasic.FileIO.FileSystem.DeleteFile(metaInfo.FullName, Microsoft.VisualBasic.FileIO.UIOption.OnlyErrorDialogs, Microsoft.VisualBasic.FileIO.RecycleOption.SendToRecycleBin);
+                }
+
             }
         }
     }
