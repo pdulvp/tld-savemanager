@@ -15,7 +15,7 @@ namespace SaveManager
             get { return Timestamp.ToString("yyyy/MM/dd-hh:mm:ss"); }
         }
 
-        public string Filename { get; set; }
+        public string Filename { get; internal set; }
 
         public string MetadataFilename
         {
