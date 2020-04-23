@@ -21,18 +21,24 @@ namespace SaveManager
 
     public partial class Form1 : Form
     {
-        Backup backup = new Backup();
+        Backup backup;
 
         public Form1()
         {
             InitializeComponent();
 
-            backup.AddedBackup += Backup_AddedBackup;
             Trace.Listeners.Add(new TraceWriterWrapper(consoleView));
+
+            backup = new Backup();
+            backup.AddedBackup += Backup_AddedBackup;
 
             imageList1.Images.Add("lock", global::SaveManager.Properties.Resources._lock);
             imageList1.Images.Add("delete", global::SaveManager.Properties.Resources.delete);
             imageList1.Images.Add("console", global::SaveManager.Properties.Resources.Console_16x);
+            imageList1.Images.Add(TraceEventType.Information.ToString(), global::SaveManager.Properties.Resources.StatusInformation_16x);
+            imageList1.Images.Add(TraceEventType.Warning.ToString(), global::SaveManager.Properties.Resources.StatusWarning_16x);
+            imageList1.Images.Add(TraceEventType.Error.ToString(), global::SaveManager.Properties.Resources.StatusInvalid_16x);
+            imageList1.Images.Add(TraceEventType.Critical.ToString(), global::SaveManager.Properties.Resources.StatusCriticalError_16x);
 
             githubToolStripMenuItem.Visible = Assembly.GetEntryAssembly()
             .GetCustomAttributes(typeof(GitRepositoryAttribute), false)
@@ -69,12 +75,13 @@ namespace SaveManager
             hideDeletedElementsToolStripMenuItem.Checked = true;
             hideDeletedElementsToolStripMenuItem.CheckOnClick = true;
 
-            consoleToolStripMenuItem.Checked = false;
+            consoleToolStripMenuItem.Checked = !backup.ValidConfiguration;
             consoleToolStripMenuItem.CheckOnClick = true;
+            splitContainer1.Panel2Collapsed = backup.ValidConfiguration;
+            splitContainer1.Panel1Collapsed = !backup.ValidConfiguration;
 
             backup.EnableAutomaticBackup(automaticBackupToolStripMenuItem.Checked);
 
-            splitContainer1.Panel2Collapsed = true;
             RefreshZipList();
         }
 

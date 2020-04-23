@@ -181,5 +181,14 @@
       <Install>false</Install>
     </BootstrapperPackage>
   </ItemGroup>
+  <ItemGroup>
+    <None Include="Resources\StatusInformation_16x.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Resources\StatusCriticalError_16x.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Resources\StatusInvalid_16x.png" />
+  </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>

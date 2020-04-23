@@ -153,6 +153,36 @@ namespace SaveManager.Properties {
         /// <summary>
         ///   Recherche une ressource localisée de type System.Drawing.Bitmap.
         /// </summary>
+        internal static System.Drawing.Bitmap StatusCriticalError_16x {
+            get {
+                object obj = ResourceManager.GetObject("StatusCriticalError_16x", resourceCulture);
+                return ((System.Drawing.Bitmap)(obj));
+            }
+        }
+        
+        /// <summary>
+        ///   Recherche une ressource localisée de type System.Drawing.Bitmap.
+        /// </summary>
+        internal static System.Drawing.Bitmap StatusInformation_16x {
+            get {
+                object obj = ResourceManager.GetObject("StatusInformation_16x", resourceCulture);
+                return ((System.Drawing.Bitmap)(obj));
+            }
+        }
+        
+        /// <summary>
+        ///   Recherche une ressource localisée de type System.Drawing.Bitmap.
+        /// </summary>
+        internal static System.Drawing.Bitmap StatusInvalid_16x {
+            get {
+                object obj = ResourceManager.GetObject("StatusInvalid_16x", resourceCulture);
+                return ((System.Drawing.Bitmap)(obj));
+            }
+        }
+        
+        /// <summary>
+        ///   Recherche une ressource localisée de type System.Drawing.Bitmap.
+        /// </summary>
         internal static System.Drawing.Bitmap StatusOK_16x {
             get {
                 object obj = ResourceManager.GetObject("StatusOK_16x", resourceCulture);
