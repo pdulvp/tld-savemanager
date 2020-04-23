@@ -26,6 +26,14 @@ namespace SaveManager
         String wgsFolder;
         String zipFolder;
 
+        public string SaveFolder
+        {
+            get
+            {
+                return zipFolder;
+            }
+        }
+
         public bool ValidConfiguration { get; private set; }
 
         public Backup()
