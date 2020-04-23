@@ -12,21 +12,32 @@ namespace SaveManager
     {
         ListView view;
 
+        TraceEventType LastEventType;
+
         public TraceWriterWrapper(ListView view)
         {
             this.view = view;
+            LastEventType = TraceEventType.Verbose;
+        }
+
+        public override void TraceEvent(TraceEventCache eventCache, string source, TraceEventType eventType, int id, string message)
+        {
+            LastEventType = eventType;
+            base.TraceEvent(eventCache, source, eventType, id, message);
+            LastEventType = TraceEventType.Verbose;
         }
 
         public override void Write(string message)
         {
-            WriteLine(message + "\n");
+            WriteLine(message);
         }
 
         public override void WriteLine(
                   string message)
         {
             ListViewItem item = new ListViewItem(new string[] { message, DateTime.Now.ToString("yyyy/MM/dd-hh:mm:ss") });
-
+            item.ImageKey = LastEventType.ToString();
+            
             if (view.InvokeRequired)
             {
                 view.Invoke(new MethodInvoker(delegate
@@ -39,6 +50,7 @@ namespace SaveManager
                 view.Items.Add(item);
             }
         }
+
     }
 
 }

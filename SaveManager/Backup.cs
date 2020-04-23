@@ -9,6 +9,7 @@ using System.Text;
 using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
+using System.Xml.Linq;
 
 namespace SaveManager
 {
@@ -21,23 +22,84 @@ namespace SaveManager
 
         FileSystemWatcher watcherZip = new FileSystemWatcher();
 
-        String wgsSaveFolder = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), $@"..\Local\Packages\27620HinterlandStudio.30233944AADE4_y1bt56c4151zw\SystemAppData\wgs\000900000B79F9B4_B23B0100842A4BE28C91CA122924EC89\F8348F5BB7A4498080B3F0194C38FFC9\");
-        String wgsFolder = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), $@"..\Local\Packages\27620HinterlandStudio.30233944AADE4_y1bt56c4151zw\SystemAppData\wgs\");
-        String zipFolder = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), $@"..\Local\Packages\27620HinterlandStudio.30233944AADE4_y1bt56c4151zw\SystemAppData\");
+        String wgsSaveFolder;
+        String wgsFolder;
+        String zipFolder;
+
+        public bool ValidConfiguration { get; private set; }
 
         public Backup()
         {
-            watcherSave.Path = wgsSaveFolder;
-            watcherSave.NotifyFilter = NotifyFilters.LastAccess | NotifyFilters.LastWrite | NotifyFilters.FileName | NotifyFilters.DirectoryName;
-            watcherSave.Filter = "container.*";
-            watcherSave.Created += OnSaveChanged;
-            watcherSave.Renamed += OnRenamed;
-            
-            watcherZip.Path = zipFolder;
-            watcherZip.NotifyFilter = NotifyFilters.LastAccess | NotifyFilters.LastWrite | NotifyFilters.FileName | NotifyFilters.DirectoryName;
-            watcherZip.Filter = "*.zip";
-            watcherZip.Created += OnZipChanged;
-            watcherZip.EnableRaisingEvents = true;
+            InitializeConfiguration();
+
+            if (ValidConfiguration)
+            {
+                watcherSave.Path = wgsSaveFolder;
+                watcherSave.NotifyFilter = NotifyFilters.LastAccess | NotifyFilters.LastWrite | NotifyFilters.FileName | NotifyFilters.DirectoryName;
+                watcherSave.Filter = "container.*";
+                watcherSave.Created += OnSaveChanged;
+                watcherSave.Renamed += OnRenamed;
+
+                watcherZip.Path = zipFolder;
+                watcherZip.NotifyFilter = NotifyFilters.LastAccess | NotifyFilters.LastWrite | NotifyFilters.FileName | NotifyFilters.DirectoryName;
+                watcherZip.Filter = "*.zip";
+                watcherZip.Created += OnZipChanged;
+                watcherZip.EnableRaisingEvents = true;
+            }
+        }
+
+        private void InitializeConfiguration()
+        {
+            try
+            {
+                DirectoryInfo packageAppData = new DirectoryInfo(Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), $@"Packages\27620HinterlandStudio.30233944AADE4_y1bt56c4151zw\"));
+                if (packageAppData.Exists)
+                {
+                    DirectoryInfo zipFolder2 = new DirectoryInfo(packageAppData.FullName + $@"Saves\");
+                    zipFolder = zipFolder2.FullName;
+                    if (!zipFolder2.Exists)
+                    {
+                        zipFolder2.Create();
+                    }
+                    DirectoryInfo wgs = new DirectoryInfo(packageAppData.FullName + $@"SystemAppData\wgs\");
+                    if (wgs.Exists)
+                    {
+                        wgsFolder = wgs.FullName;
+                    }
+                    DirectoryInfo sub = wgs.GetDirectories().Where(x => x.Name != "t").First();
+                    if (sub != null)
+                    {
+                        DirectoryInfo sub2 = sub.GetDirectories().First();
+                        if (sub2 != null)
+                        {
+                            wgsSaveFolder = sub2.FullName;
+                        }
+                    }
+                }
+                ValidConfiguration = true;
+                Trace.TraceInformation("Configuration is valid");
+            }
+            catch (Exception)
+            {
+                Trace.TraceError("Configuration is invalid");
+                ValidConfiguration = false;
+            }
+
+            Trace.WriteLine("Backup Folder:");
+            Trace.WriteLine(toPathString(zipFolder));
+            Trace.WriteLine("Root TLD Save Folder:");
+            Trace.WriteLine(toPathString(wgsFolder));
+            Trace.WriteLine("Monitored Sub Folder:");
+            Trace.WriteLine(toPathString(wgsSaveFolder));
+        }
+
+        private string toPathString(string value)
+        {
+            if (value != null)
+            {
+                value = value.Replace(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), $@"%AppData%\Local");
+            }
+            return value;
         }
 
         public List<ContainerFile> Backups
