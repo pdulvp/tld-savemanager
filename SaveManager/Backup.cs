@@ -108,28 +108,36 @@ namespace SaveManager
             {
                 List<ContainerFile> files = new List<ContainerFile>();
                 DirectoryInfo d = new DirectoryInfo(zipFolder);
-                FileInfo[] Files = d.GetFiles(watcherZip.Filter);
-                foreach (FileInfo file in Files)
+                foreach (FileInfo zipInfo in d.GetFiles("*.zip"))
                 {
-                    DateTime creation = File.GetCreationTime(file.FullName);
-
-                    FileInfo info = new FileInfo(file.FullName.Replace(".zip", ".json"));
-                    if (!info.Exists)
+                    FileInfo jsonInfo = new FileInfo(zipInfo.FullName.Replace(".zip", ".json"));
+                    if (!jsonInfo.Exists)
                     {
-                        ContainerFile meta = new ContainerFile();
-                        meta.Filename = file.Name;
-                        meta.Summary = "";
-                        meta.Timestamp = creation;
-                        meta.Locked = false;
-                        meta.Deleted = false;
-                        File.WriteAllText(info.FullName, JsonSerializer.Serialize(meta));
+                        ContainerFile skeleton = new ContainerFile();
+                        skeleton.Summary = "";
+                        skeleton.Timestamp = File.GetCreationTime(zipInfo.FullName);
+                        skeleton.Locked = false;
+                        skeleton.Deleted = false;
+                        Save(jsonInfo, skeleton);
                     }
 
-                    ContainerFile meta2 = JsonSerializer.Deserialize<ContainerFile>(File.ReadAllText(info.FullName));
-                    files.Add(meta2);
+                    ContainerFile meta = JsonSerializer.Deserialize<ContainerFile>(File.ReadAllText(jsonInfo.FullName));
+                    meta.Filename = zipInfo.Name;
+                    files.Add(meta);
+                }
+
+                foreach (FileInfo jsonInfo in d.GetFiles("*.json"))
+                {
+                    FileInfo zipInfo = new FileInfo(jsonInfo.FullName.Replace(".json", ".zip"));
+                    if (!zipInfo.Exists)
+                    {
+                        ContainerFile meta = JsonSerializer.Deserialize<ContainerFile>(File.ReadAllText(jsonInfo.FullName));
+                        meta.Filename = zipInfo.Name;
+                        meta.Deleted = true;
+                        files.Add(meta);
+                    }
                 }
                 return files;
-
             }
         }
 
@@ -145,10 +153,18 @@ namespace SaveManager
             ZipFile.ExtractToDirectory(zipFolder + meta.Filename, wgsFolder);
         }
 
+        private void Save(FileInfo info, ContainerFile meta)
+        {
+            JsonSerializerOptions options = new JsonSerializerOptions();
+            options.IgnoreReadOnlyProperties = true;
+            options.WriteIndented = true;
+            File.WriteAllText(info.FullName, JsonSerializer.Serialize(meta, options));
+        }
+
         internal void Save(ContainerFile meta)
         {
             FileInfo info = new FileInfo(zipFolder + meta.MetadataFilename);
-            File.WriteAllText(info.FullName, JsonSerializer.Serialize(meta));
+            Save(info, meta);
         }
 
         private void DeleteDirectory(string target_dir)
@@ -240,7 +256,6 @@ namespace SaveManager
                 {
                     Microsoft.VisualBasic.FileIO.FileSystem.DeleteFile(metaInfo.FullName, Microsoft.VisualBasic.FileIO.UIOption.OnlyErrorDialogs, Microsoft.VisualBasic.FileIO.RecycleOption.SendToRecycleBin);
                 }
-
             }
         }
     }
