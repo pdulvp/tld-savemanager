@@ -83,7 +83,6 @@
             this.menuStrip1.Size = new System.Drawing.Size(684, 24);
             this.menuStrip1.TabIndex = 1;
             this.menuStrip1.Text = "menuStrip1";
-            this.menuStrip1.ItemClicked += new System.Windows.Forms.ToolStripItemClickedEventHandler(this.menuStrip1_ItemClicked);
             // 
             // fileToolStripMenuItem
             // 
@@ -163,6 +162,7 @@
             this.purgeDeletedListToolStripMenuItem.Name = "purgeDeletedListToolStripMenuItem";
             this.purgeDeletedListToolStripMenuItem.Size = new System.Drawing.Size(198, 22);
             this.purgeDeletedListToolStripMenuItem.Text = "Purge deleted elements";
+            this.purgeDeletedListToolStripMenuItem.ToolTipText = "Move all elements marked as Deleted to Recycle Bin";
             this.purgeDeletedListToolStripMenuItem.Click += new System.EventHandler(this.purgeDeletedListToolStripMenuItem_Click);
             // 
             // githubToolStripMenuItem
@@ -264,7 +264,6 @@
             this.toolStripDropDownButton1.Name = "toolStripDropDownButton1";
             this.toolStripDropDownButton1.Size = new System.Drawing.Size(29, 20);
             this.toolStripDropDownButton1.Text = "toolStripDropDownButton1";
-            this.toolStripDropDownButton1.Click += new System.EventHandler(this.toolStripDropDownButton1_Click);
             // 
             // consoleToolStripMenuItem
             // 
@@ -288,7 +287,6 @@
             this.toolStripStatusLabel2.Name = "toolStripStatusLabel2";
             this.toolStripStatusLabel2.Size = new System.Drawing.Size(90, 17);
             this.toolStripStatusLabel2.Text = "Double Click";
-            this.toolStripStatusLabel2.Click += new System.EventHandler(this.toolStripStatusLabel2_Click);
             // 
             // toolStripStatusLabel4
             // 
@@ -319,12 +317,12 @@
             this.listView1.Location = new System.Drawing.Point(0, 0);
             this.listView1.MultiSelect = false;
             this.listView1.Name = "listView1";
-            this.listView1.Size = new System.Drawing.Size(684, 398);
+            this.listView1.Size = new System.Drawing.Size(684, 199);
             this.listView1.SmallImageList = this.imageList1;
             this.listView1.TabIndex = 9;
             this.listView1.UseCompatibleStateImageBehavior = false;
             this.listView1.View = System.Windows.Forms.View.Details;
-            this.listView1.SelectedIndexChanged += new System.EventHandler(this.listView1_SelectedIndexChanged_1);
+            this.listView1.MouseDoubleClick += new System.Windows.Forms.MouseEventHandler(this.listView1_MouseDoubleClick);
             this.listView1.Resize += new System.EventHandler(this.listView1_Resize);
             // 
             // splitContainer1
@@ -343,7 +341,6 @@
             // splitContainer1.Panel2
             // 
             this.splitContainer1.Panel2.Controls.Add(this.consoleView);
-            this.splitContainer1.Panel2Collapsed = true;
             this.splitContainer1.Size = new System.Drawing.Size(684, 398);
             this.splitContainer1.SplitterDistance = 199;
             this.splitContainer1.TabIndex = 10;
@@ -360,7 +357,7 @@
             this.consoleView.Location = new System.Drawing.Point(0, -2);
             this.consoleView.MultiSelect = false;
             this.consoleView.Name = "consoleView";
-            this.consoleView.Size = new System.Drawing.Size(684, 210);
+            this.consoleView.Size = new System.Drawing.Size(684, 197);
             this.consoleView.SmallImageList = this.imageList1;
             this.consoleView.TabIndex = 10;
             this.consoleView.UseCompatibleStateImageBehavior = false;
@@ -378,7 +375,6 @@
             this.MainMenuStrip = this.menuStrip1;
             this.Name = "Form1";
             this.Text = "TLD Save Manager";
-            this.Load += new System.EventHandler(this.Form1_Load);
             this.menuStrip1.ResumeLayout(false);
             this.menuStrip1.PerformLayout();
             this.contextMenuStrip1.ResumeLayout(false);
