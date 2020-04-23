@@ -235,22 +235,15 @@ namespace SaveManager
         {
             ContainerFile meta = (ContainerFile)listViewItem.Tag;
             meta.Locked = !meta.Locked;
-            Save(meta);
+            backup.Save(meta);
             UpdateIcon(listViewItem);
             listView1.SelectedItems.Clear();
-        }
-
-        private void Save(ContainerFile meta)
-        {
-            String zipFolder = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), $@"..\Local\Packages\27620HinterlandStudio.30233944AADE4_y1bt56c4151zw\SystemAppData\");
-            FileInfo info = new FileInfo(zipFolder + meta.Filename.Replace(".zip", ".json"));
-            File.WriteAllText(info.FullName, JsonSerializer.Serialize(meta));
         }
 
         private void Delete(ContainerFile meta)
         {
             meta.Deleted = !meta.Deleted;
-            Save(meta);
+            backup.Save(meta);
         }
 
         private void Edit(ListViewItem listViewItem)
@@ -258,7 +251,7 @@ namespace SaveManager
             ContainerFile meta = (ContainerFile)listViewItem.Tag;
             string result = Microsoft.VisualBasic.Interaction.InputBox("Question?", "Title", meta.Summary);
             meta.Summary = result;
-            Save(meta);
+            backup.Save(meta);
             listView1.SelectedItems.Clear();
             RefreshZipList();
         }
