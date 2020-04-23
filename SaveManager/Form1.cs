@@ -249,7 +249,7 @@ namespace SaveManager
         private void Edit(ListViewItem listViewItem)
         {
             ContainerFile meta = (ContainerFile)listViewItem.Tag;
-            string result = Microsoft.VisualBasic.Interaction.InputBox("Question?", "Title", meta.Summary);
+            string result = Microsoft.VisualBasic.Interaction.InputBox("Summary?", "Edit Summary", meta.Summary);
             if (result.Length > 0)
             {
                 meta.Summary = result;
@@ -299,10 +299,9 @@ namespace SaveManager
 
         private void openFolderToolStripMenuItem_Click(object sender, EventArgs e)
         {
-            String zipFolder = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), $@"..\Local\Packages\27620HinterlandStudio.30233944AADE4_y1bt56c4151zw\SystemAppData\");
             System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo()
             {
-                FileName = zipFolder,
+                FileName = backup.SaveFolder,
                 UseShellExecute = true,
                 Verb = "open"
             });
