@@ -40,16 +40,19 @@ namespace SaveManager
         {
             InitializeConfiguration();
 
+            Windows.Storage.ApplicationDataContainer a;
+
+
             if (ValidConfiguration)
             {
                 watcherSave.Path = wgsSaveFolder;
-                watcherSave.NotifyFilter = NotifyFilters.LastAccess | NotifyFilters.LastWrite | NotifyFilters.FileName | NotifyFilters.DirectoryName;
+                watcherSave.NotifyFilter = NotifyFilters.CreationTime | NotifyFilters.LastAccess | NotifyFilters.LastWrite | NotifyFilters.FileName;
                 watcherSave.Filter = "container.*";
                 watcherSave.Created += OnSaveChanged;
                 watcherSave.Renamed += OnRenamed;
 
                 watcherZip.Path = zipFolder;
-                watcherZip.NotifyFilter = NotifyFilters.LastAccess | NotifyFilters.LastWrite | NotifyFilters.FileName | NotifyFilters.DirectoryName;
+                watcherZip.NotifyFilter = NotifyFilters.CreationTime | NotifyFilters.LastAccess | NotifyFilters.LastWrite | NotifyFilters.FileName;
                 watcherZip.Filter = "*.zip";
                 watcherZip.Created += OnZipChanged;
                 watcherZip.EnableRaisingEvents = true;
@@ -80,7 +83,7 @@ namespace SaveManager
                         DirectoryInfo sub2 = sub.GetDirectories().First();
                         if (sub2 != null)
                         {
-                            wgsSaveFolder = sub2.FullName;
+                            wgsSaveFolder = sub2.FullName + $@"\";
                         }
                     }
                 }
