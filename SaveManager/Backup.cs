@@ -40,9 +40,6 @@ namespace SaveManager
         {
             InitializeConfiguration();
 
-            Windows.Storage.ApplicationDataContainer a;
-
-
             if (ValidConfiguration)
             {
                 watcherSave.Path = wgsSaveFolder;
